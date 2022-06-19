@@ -29,7 +29,6 @@ def _ensure_list(value):
     return list(value) if is_sequence(value) else [value]
 
 
-
 class APIRunnerException(Exception):
     pass
 
@@ -184,21 +183,9 @@ class APIRunner(object):
     """
 
     def __init__(self, base_url, module=None, use_json=True, **kwargs):
-
         self.base_url = base_url
         self._module = module
-        # self.base_url_parts = urlparse(base_url)
-        # if url_params_formats is None:
-        #     url_params_formats = {}
-        # self.url_params_formats = url_params_formats
         self.use_json = use_json
-
-        # fetch_url_passthrough = ["use_proxy", "force", "last_mod_time", "timeout", "use_gssapi", "unix_socket", "ca_path", "cookies", "unredirected_headers"]
-        # self.fetch_url_params = dict(kwargs)
-
-        # for mod_param_name, spec in iteritems(module.argument_spec):
-        #     if mod_param_name not in self.arg_formats:
-        #         self.arg_formats[mod_param_name] = _Format.as_default_type(spec['type'], mod_param_name)
 
     @property
     def module(self):
@@ -210,36 +197,45 @@ class APIRunner(object):
             raise AttributeError("Cannot re-assign a module to APIRunner instance")
         self._module = module
 
-    def __call__(self, ignore_value_none=True, check_mode_skip=False, check_mode_return=None, **kwargs):
+    def __call__(self, path, params_list=None, ignore_value_none=True, check_mode_skip=False, check_mode_return=None, **kwargs):
         if self.module is None:
             raise RuntimeError('APIRunner: must set module')
+        if params_list is None:
+            params_list = []
         return _APIRunnerContext(runner=self,
+                                 path=path,
+                                 params_list=params_list,
                                  ignore_value_none=ignore_value_none,
                                  check_mode_skip=check_mode_skip,
                                  check_mode_return=check_mode_return, **kwargs)
 
 
 class _APIRunnerContext(object):
-    def __init__(self, runner, ignore_value_none, check_mode_skip, check_mode_return, **kwargs):
+    def __init__(self, runner, path, params_list, ignore_value_none, check_mode_skip, check_mode_return, **kwargs):
         self.runner = runner
+        mp = runner.module.params
+        self.path = path
+        self.params_list = params_list
+        if ignore_value_none:
+            self.params_dict = dict((k, mp[k]) for k in params_list if mp.get(k) is not None)
+        else:
+            self.params_dict = dict((k, mp[k]) for k in params_list if k in mp)
+
         self.ignore_value_none = ignore_value_none
         self.check_mode_skip = check_mode_skip
         self.check_mode_return = check_mode_return
 
-    def get(self, path, **kwargs):
+    def get(self, **kwargs):
         runner = self.runner
-        module = self.runner.module
 
-        url = runner.base_url + path
+        url = runner.base_url + self.path
+        params = dict(self.params_dict)
+        params.update(kwargs)
 
-        return requests.get(url,)
-
+        return requests.get(url, params=params)
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return False
-
-
-# fmt = _Format()
