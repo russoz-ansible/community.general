@@ -65,3 +65,7 @@ def test_simple_params(mocker):
         result2 = ctx.get(e='potatoes', d=[1, 2])
         _assert_urls_equal(result2.url, r'http://test.testdomain.com/api/V8/hello_params?e=potatoes&d=1&d=2')
         assert result2.text == "Hello World Params!\n\nd: ['1', '2']\ne: potatoes", result2.text
+
+        result3 = ctx.post(e='potatoes', d=[1, 2])
+        _assert_urls_equal(result3.url, r'http://test.testdomain.com/api/V8/hello_params?e=potatoes&d=1&d=2')
+        assert result3.text == "Hello World Params!\n\nd: ['1', '2']\ne: potatoes", result3.text

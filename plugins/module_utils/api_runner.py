@@ -225,6 +225,14 @@ class _APIRunnerContext(object):
         self.check_mode_skip = check_mode_skip
         self.check_mode_return = check_mode_return
 
+        self.session = requests.Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
     def get(self, **kwargs):
         runner = self.runner
 
@@ -232,10 +240,13 @@ class _APIRunnerContext(object):
         params = dict(self.params_dict)
         params.update(kwargs)
 
-        return requests.get(url, params=params)
+        return self.session.get(url, params=params)
 
-    def __enter__(self):
-        return self
+    def post(self, **kwargs):
+        runner = self.runner
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return False
+        url = runner.base_url + self.path
+        params = dict(self.params_dict)
+        params.update(kwargs)
+
+        return self.session.post(url, params=params)
