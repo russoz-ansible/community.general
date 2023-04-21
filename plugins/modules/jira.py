@@ -790,17 +790,17 @@ class JIRA(StateModuleHelper):
                     url=url,
                     method=method,
                 )
-                self.module.fail_json(msg=to_native(msg), exception=traceback.format_exc())
+                self.do_raise(msg, exception=traceback.format_exc())
             if error:
                 msg = []
                 for key in ('errorMessages', 'errors'):
                     if error.get(key):
-                        msg.append(to_native(error[key]))
+                        msg.append(error[key])
                 if msg:
-                    self.module.fail_json(msg=', '.join(msg))
-                self.module.fail_json(msg=to_native(error))
+                    self.do_raise(msg=', '.join(msg))
+                self.do_raise(msg=error)
             # Fallback print body, if it cant be decoded
-            self.module.fail_json(msg=to_native(info['body']))
+            self.do_raise(msg=info['body'])
 
         body = response.read()
 
