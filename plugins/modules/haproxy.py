@@ -333,14 +333,20 @@ class HAProxy(object):
         else:
             backends = [pxname]
 
+        valid_backends = []
         # Run the command for each requested backend
         for backend in backends:
             # Fail when backends were not found
             state = self.get_state_for(backend, svname)
-            if (self.fail_on_not_found) and state is None:
+            if state:
+                valid_backends.append(backend)
+                continue
+
+            if self.fail_on_not_found:
                 self.module.fail_json(
                     msg="The specified backend '%s/%s' was not found!" % (backend, svname))
 
+        for backend in valid_backends:
             if state is not None:
                 self.execute(Template(cmd).substitute(pxname=backend, svname=svname))
                 if self.wait:
