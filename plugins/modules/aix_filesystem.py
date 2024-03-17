@@ -181,6 +181,7 @@ msg:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils._mount import ismount
+from ansible_collections.community.general.plugins.module_utils.aix import crfs_runner_ctx
 import re
 
 
@@ -293,61 +294,30 @@ def create_fs(
         account_subsystem, permissions, nfs_server, attributes):
     """ Create LVM file system or NFS remote mount point. """
 
-    attributes = ' -a '.join(attributes)
+    if vg:
+        vg_state, msg = _validate_vg(module, vg)
+        if not vg_state:
+            changed = False
+            return changed, msg
 
-    # Parameters definition.
-    account_subsys_opt = {
-        True: '-t yes',
-        False: '-t no'
-    }
-
-    if nfs_server is not None:
+    if nfs_server:
         auto_mount_opt = {
             True: '-A',
             False: '-a'
         }
+        auto_mount = auto_mount_opt[auto_mount]
 
-    else:
-        auto_mount_opt = {
-            True: '-A yes',
-            False: '-A no'
-        }
-
-    if size is None:
-        size = ''
-    else:
-        size = "-a size=%s" % size
-
-    if device is None:
-        device = ''
-    else:
-        device = "-d %s" % device
-
-    if vg is None:
-        vg = ''
-    else:
-        vg_state, msg = _validate_vg(module, vg)
-        if vg_state:
-            vg = "-g %s" % vg
+        if device is None:
+            device = []
         else:
-            changed = False
+            device = ["-d", device]
 
-            return changed, msg
-
-    if mount_group is None:
-        mount_group = ''
-
-    else:
-        mount_group = "-u %s" % mount_group
-
-    auto_mount = auto_mount_opt[auto_mount]
-    account_subsystem = account_subsys_opt[account_subsystem]
-
-    if nfs_server is not None:
         # Creates a NFS file system.
         mknfsmnt_cmd = module.get_bin_path('mknfsmnt', True)
         if not module.check_mode:
-            rc, mknfsmnt_out, err = module.run_command([mknfsmnt_cmd, "-f", filesystem, device, "-h", nfs_server, "-t", permissions, auto_mount, "-w", "bg"])
+            rc, mknfsmnt_out, err = module.run_command(
+                [mknfsmnt_cmd, "-f", filesystem] + device + ["-h", nfs_server, "-t", permissions, auto_mount, "-w", "bg"]
+            )
             if rc != 0:
                 module.fail_json(msg="Failed to run mknfsmnt. Error message: %s" % err)
             else:
@@ -362,28 +332,16 @@ def create_fs(
             return changed, msg
 
     else:
-        # Creates a LVM file system.
-        crfs_cmd = module.get_bin_path('crfs', True)
-        if not module.check_mode:
-            cmd = [crfs_cmd, "-v", fs_type, "-m", filesystem, vg, device, mount_group, auto_mount, account_subsystem, "-p", permissions, size, "-a", attributes]
-            rc, crfs_out, err = module.run_command(cmd)
+        crfs = crfs_runner_ctx(module)
 
-            if rc == 10:
-                module.exit_json(
-                    msg="Using a existent previously defined logical volume, "
-                        "volume group needs to be empty. %s" % err)
-
-            elif rc != 0:
-                module.fail_json(msg="Failed to run %s. Error message: %s" % (cmd, err))
-
-            else:
-                changed = True
-                return changed, crfs_out
+        rc, crfs_out, err = crfs.run(**module.params)
+        if rc == 10:
+            module.exit_json(msg="Using a existent previously defined logical volume, volume group needs to be empty. %s" % err)
+        elif rc != 0:
+            module.fail_json(msg="Failed to run %s. Error message: %s" % (crfs.run_info()["cmd"], err))
         else:
             changed = True
-            msg = ''
-
-            return changed, msg
+            return changed, crfs_out
 
 
 def remove_fs(module, filesystem, rm_mount_point):
