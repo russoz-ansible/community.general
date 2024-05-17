@@ -352,6 +352,9 @@ class Pacman(object):
             if not (self.m.params["name"] or self.m.params["upgrade"]):
                 self.success()
 
+        if not self.m.params['name']:
+            self.success()
+
         self.inventory = self._build_inventory()
         if self.m.params["upgrade"]:
             self.upgrade()
