@@ -123,8 +123,6 @@ packages:
 '''
 
 
-import os
-
 from ansible.module_utils.basic import AnsibleModule
 
 
@@ -136,13 +134,13 @@ def is_installed(xbps_output):
 def query_package(module, xbps_path, name, state="present"):
     """Returns Package info"""
     if state == "present":
-        lcmd = "%s %s" % (xbps_path['query'], name)
+        lcmd = [xbps_path['query'], name]
         lrc, lstdout, lstderr = module.run_command(lcmd, check_rc=False)
         if not is_installed(lstdout):
             # package is not installed locally
             return False, False
 
-        rcmd = "%s -Sun" % (xbps_path['install'])
+        rcmd = [xbps_path['install'], "-Sun"]
         rrc, rstdout, rstderr = module.run_command(rcmd, check_rc=False)
         if rrc == 0 or rrc == 17:
             """Return True to indicate that the package is installed locally,
@@ -155,7 +153,7 @@ def query_package(module, xbps_path, name, state="present"):
 
 def update_package_db(module, xbps_path):
     """Returns True if update_package_db changed"""
-    cmd = "%s -S" % (xbps_path['install'])
+    cmd = [xbps_path['install'], "-S"]
     rc, stdout, stderr = module.run_command(cmd, check_rc=False)
 
     if rc != 0:
@@ -167,7 +165,7 @@ def update_package_db(module, xbps_path):
 
 
 def upgrade_xbps(module, xbps_path, exit_on_success=False):
-    cmdupgradexbps = "%s -uy xbps" % (xbps_path['install'])
+    cmdupgradexbps = [xbps_path['install'], "-uy", "xbps"]
     rc, stdout, stderr = module.run_command(cmdupgradexbps, check_rc=False)
     if rc != 0:
         module.fail_json(msg='Could not upgrade xbps itself')
@@ -175,8 +173,8 @@ def upgrade_xbps(module, xbps_path, exit_on_success=False):
 
 def upgrade(module, xbps_path):
     """Returns true is full upgrade succeeds"""
-    cmdupgrade = "%s -uy" % (xbps_path['install'])
-    cmdneedupgrade = "%s -un" % (xbps_path['install'])
+    cmdupgrade = [xbps_path['install'], "-uy"]
+    cmdneedupgrade = [xbps_path['install'], "-un"]
 
     rc, stdout, stderr = module.run_command(cmdneedupgrade, check_rc=False)
     if rc == 0:
@@ -209,7 +207,7 @@ def remove_packages(module, xbps_path, packages):
         if not installed:
             continue
 
-        cmd = "%s -y %s" % (xbps_path['remove'], package)
+        cmd = [xbps_path['remove'], "-y", package]
         rc, stdout, stderr = module.run_command(cmd, check_rc=False)
 
         if rc != 0:
@@ -228,7 +226,7 @@ def remove_packages(module, xbps_path, packages):
 def install_packages(module, xbps_path, state, packages):
     """Returns true if package install succeeds."""
     toInstall = []
-    for i, package in enumerate(packages):
+    for package in packages:
         """If the package is installed and state == present or state == latest
         and is up-to-date then skip"""
         installed, updated = query_package(module, xbps_path, package)
@@ -241,7 +239,7 @@ def install_packages(module, xbps_path, state, packages):
     if len(toInstall) == 0:
         module.exit_json(changed=False, msg="Nothing to Install")
 
-    cmd = "%s -y %s" % (xbps_path['install'], " ".join(toInstall))
+    cmd = [xbps_path['install'], "-y", toInstall]
     rc, stdout, stderr = module.run_command(cmd, check_rc=False)
 
     if rc == 16 and module.params['upgrade_xbps']:
@@ -316,10 +314,6 @@ def main():
     xbps_path['install'] = module.get_bin_path('xbps-install', True)
     xbps_path['query'] = module.get_bin_path('xbps-query', True)
     xbps_path['remove'] = module.get_bin_path('xbps-remove', True)
-
-    if not os.path.exists(xbps_path['install']):
-        module.fail_json(msg="cannot find xbps, in path %s"
-                         % (xbps_path['install']))
 
     p = module.params
 
