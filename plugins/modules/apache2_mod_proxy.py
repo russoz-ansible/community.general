@@ -208,6 +208,7 @@ import re
 from ansible_collections.community.general.plugins.module_utils import deps
 from ansible_collections.community.general.plugins.module_utils.module_helper import ModuleHelper, ModuleHelperException
 
+from ansible.module_utils.six import raise_from
 from ansible.module_utils.urls import fetch_url
 
 with deps.declare("BeautifulSoup"):
@@ -264,7 +265,7 @@ class BalancerMember(object):
         try:
             soup = BeautifulSoup(response)
         except TypeError as exc:
-            raise ModuleHelperException("Cannot parse balancer_member_page HTML! {0}".format(exc))
+            raise_from(ModuleHelperException("Cannot parse balancer_member_page HTML! {0}".format(exc)), exc)
 
         subsoup = soup.findAll('table')[1].findAll('tr')
         keys = subsoup[0].findAll('th')
@@ -343,8 +344,8 @@ class Balancer(object):
         """ Returns members of the balancer as a generator object for later iteration."""
         try:
             soup = BeautifulSoup(self.page)
-        except TypeError:
-            raise ModuleHelperException("Cannot parse balancer page HTML! {0}".format(self.page))
+        except TypeError as e:
+            raise_from(ModuleHelperException("Cannot parse balancer page HTML! {0}".format(self.page)), e)
 
         for element in soup.findAll('a')[1::1]:
             balancer_member_suffix = element.get('href')
