@@ -220,9 +220,9 @@ EXPRESSION = re.compile(r"(b=([\w\.\-]+)&w=(https?|ajp|wss?|ftp|[sf]cgi)://([\w\
 APACHE_VERSION_EXPRESSION = re.compile(r"SERVER VERSION: APACHE/([\d.]+)")
 
 
-def regexp_extraction(string, regexp, groups=1):
+def regexp_extraction(string, _regexp, groups=1):
     """ Returns the capture group (default=1) specified in the regexp, applied to the string """
-    regexp_search = regexp.search(string)
+    regexp_search = _regexp.search(string)
     if regexp_search:
         if regexp_search.group(groups) != '':
             return regexp_search.group(groups)
@@ -257,13 +257,13 @@ class BalancerMember(object):
     def get_member_attributes(self):
         """ Returns a dictionary of a balancer member's attributes."""
 
-        response, info = fetch_url(self.module, self.management_url)
+        resp, info = fetch_url(self.module, self.management_url)
 
         if info['status'] != 200:
             raise ModuleHelperException("Could not get balancer_member_page, check for connectivity! {0}".format(info))
 
         try:
-            soup = BeautifulSoup(response)
+            soup = BeautifulSoup(resp)
         except TypeError as exc:
             raise_from(ModuleHelperException("Cannot parse balancer_member_page HTML! {0}".format(exc)), exc)
 
@@ -295,7 +295,7 @@ class BalancerMember(object):
         values_url = "".join("{0}={1}".format(url_param, 1 if values[mode] else 0) for mode, url_param in values_mapping.items())
         request_body = "{0}{1}".format(request_body, values_url)
 
-        dummy, info = fetch_url(self.module, self.management_url, data=request_body)
+        response, info = fetch_url(self.module, self.management_url, data=request_body)
         if info['status'] != 200:
             raise ModuleHelperException("Could not set the member status! {0} {1}".format(self.host, info['status']))
 
@@ -327,11 +327,11 @@ class Balancer(object):
 
     def fetch_balancer_page(self):
         """ Returns the balancer management html page as a string for later parsing."""
-        response, info = fetch_url(self.module, self.url)
+        resp, info = fetch_url(self.module, self.url)
         if info['status'] != 200:
             raise ModuleHelperException("Could not get balancer page! HTTP status response: {0}".format(info['status']))
 
-        content = response.read()
+        content = resp.read()
         apache_version = regexp_extraction(content.upper(), APACHE_VERSION_EXPRESSION, 1)
         if not apache_version:
             raise ModuleHelperException("Could not get the Apache server version from the balancer-manager")
