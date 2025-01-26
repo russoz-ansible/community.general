@@ -382,10 +382,7 @@ class ApacheModProxy(ModuleHelper):
 
     def __run__(self):
         if self.vars.member_host is None:
-            json_output_list = []
-            for member in self.mybalancer.members:
-                json_output_list.append(member.as_dict())
-            self.vars.members = json_output_list
+            self.vars.members = [member.as_dict() for member in self.mybalancer.members]
         else:
             member_exists = False
             member_status = {'disabled': False, 'drained': False, 'hot_standby': False, 'ignore_errors': False}
