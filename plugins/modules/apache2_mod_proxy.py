@@ -352,7 +352,7 @@ class Balancer(object):
             if not balancer_member_suffix:
                 raise ModuleHelperException("Argument 'balancer_member_suffix' is empty!")
 
-            yield BalancerMember(str(self.base_url + balancer_member_suffix), str(self.url), self.module)
+            yield BalancerMember(self.base_url + balancer_member_suffix, self.url, self.module)
 
     members = property(get_balancer_members)
 
