@@ -387,6 +387,7 @@ class ApacheModProxy(ModuleHelper):
                 json_output_list.append(member.as_dict())
             self.vars.members = json_output_list
         else:
+            member_exists = False
             member_status = {'disabled': False, 'drained': False, 'hot_standby': False, 'ignore_errors': False}
             for mode in member_status:
                 for state in self.vars.state:
@@ -397,6 +398,7 @@ class ApacheModProxy(ModuleHelper):
 
             for member in self.mybalancer.members:
                 if str(member.host) == self.vars.member_host:
+                    member_exists = True
                     if self.vars.state is not None:
                         member_status_before = member.status
                         if not self.check_mode:
@@ -406,7 +408,8 @@ class ApacheModProxy(ModuleHelper):
                         self.changed = (member_status_before != member_status_after)
                     self.vars.member = member.as_dict()
 
-            self.do_raise(msg='{0} is not a member of the balancer {1}!'.format(self.vars.member_host, self.vars.balancer_vhost))
+            if not member_exists:
+                self.do_raise(msg='{0} is not a member of the balancer {1}!'.format(self.vars.member_host, self.vars.balancer_vhost))
 
 
 def main():
