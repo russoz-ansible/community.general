@@ -36,9 +36,9 @@ options:
     elements: str
   path:
     description:
-      - "':' separated list of paths to search for 'brew' executable."
+      - "A V(:) separated list of paths to search for C(brew) executable."
     default: '/usr/local/bin:/opt/homebrew/bin'
-    type: path
+    type: str
   state:
     description:
       - State of the cask.
@@ -739,7 +739,7 @@ def main():
             ),
             path=dict(
                 default="/usr/local/bin:/opt/homebrew/bin",
-                type='path',
+                type='str',
             ),
             state=dict(
                 default="present",

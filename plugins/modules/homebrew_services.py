@@ -44,7 +44,7 @@ options:
         location is prefixed relative to the actual path of C(brew) command, providing an alternative C(brew) path enables
         managing different set of packages in an alternative location in the system.
     default: '/usr/local/bin:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin'
-    type: path
+    type: str
   state:
     description:
       - State of the package's service.
@@ -229,7 +229,7 @@ def main():
             ),
             path=dict(
                 default="/usr/local/bin:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin",
-                type="path",
+                type="str",
             ),
         ),
         supports_check_mode=True,

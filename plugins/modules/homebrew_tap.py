@@ -54,7 +54,7 @@ options:
     description:
       - A V(:) separated list of paths to search for C(brew) executable.
     default: '/usr/local/bin:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin'
-    type: path
+    type: str
     version_added: '2.1.0'
 requirements: [homebrew]
 """
@@ -224,7 +224,7 @@ def main():
             state=dict(default='present', choices=['present', 'absent']),
             path=dict(
                 default="/usr/local/bin:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin",
-                type='path',
+                type='str',
             ),
         ),
         supports_check_mode=True,
