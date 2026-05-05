@@ -463,6 +463,11 @@ class LookupModule(LookupBase):
     def run(self, terms, variables, **kwargs):
         if not HAS_TSS_SDK:
             raise AnsibleError("python-tss-sdk must be installed to use this plugin")
+        if not terms:
+            raise AnsibleError(
+                "tss lookup requires at least one secret ID as a positional argument, "
+                "e.g. lookup('community.general.tss', 102, ...)"
+            )
 
         self.set_options(var_options=variables, direct=kwargs)
 
