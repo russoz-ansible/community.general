@@ -1,0 +1,2 @@
+bugfixes:
+  - tss lookup plugin - raise an error when no secret ID is provided, instead of silently returning an empty list (https://github.com/ansible-collections/community.general/issues/1943, https://github.com/ansible-collections/community.general/pull/11989).
