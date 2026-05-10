@@ -222,6 +222,7 @@ boot_options:
 """
 
 import os
+import re
 import traceback
 
 PLATFORM_ID_MAP = {
@@ -229,6 +230,24 @@ PLATFORM_ID_MAP = {
     "efi": b"\xef",
     "mac": b"\x02",
 }
+
+_ISO9660_INVALID = re.compile(r"[^A-Z0-9_]")
+
+
+def _sanitize_iso_path(path, is_file=False):
+    parts = path.split("/")
+    result = []
+    for i, part in enumerate(parts):
+        if not part:
+            result.append(part)
+            continue
+        if is_file and i == len(parts) - 1 and "." in part:
+            name, ext = part.upper().rsplit(".", 1)
+            result.append(_ISO9660_INVALID.sub("_", name) + "." + _ISO9660_INVALID.sub("_", ext))
+        else:
+            result.append(_ISO9660_INVALID.sub("_", part.upper()))
+    return "/".join(result)
+
 
 PYCDLIB_IMP_ERR = None
 try:
@@ -249,10 +268,11 @@ def add_file(module, iso_file=None, src_file=None, file_path=None, rock_ridge=No
     # In standard ISO interchange level 1, file names have a maximum of 8 characters, followed by a required dot,
     # followed by a maximum 3 character extension, followed by a semicolon and a version
     file_name = os.path.basename(file_path)
+    sanitized_path = _sanitize_iso_path(file_path, is_file=True)
     if "." not in file_name:
-        file_in_iso_path = f"{file_path.upper()}.;1"
+        file_in_iso_path = f"{sanitized_path}.;1"
     else:
-        file_in_iso_path = f"{file_path.upper()};1"
+        file_in_iso_path = f"{sanitized_path};1"
     if rock_ridge:
         rr_name = file_name
     if use_joliet:
@@ -271,7 +291,7 @@ def add_directory(module, iso_file=None, dir_path=None, rock_ridge=None, use_jol
     rr_name = None
     joliet_path = None
     udf_path = None
-    iso_dir_path = dir_path.upper()
+    iso_dir_path = _sanitize_iso_path(dir_path)
     if rock_ridge:
         rr_name = os.path.basename(dir_path)
     if use_joliet:
@@ -419,10 +439,11 @@ def main():
         if boot_options:
             boot_file = boot_options["boot_file"]
             boot_file_basename = os.path.basename(boot_file)
+            sanitized_boot_path = _sanitize_iso_path(f"/{boot_file_basename}", is_file=True)
             if "." not in boot_file_basename:
-                boot_iso_path = f"/{boot_file_basename.upper()}.;1"
+                boot_iso_path = f"{sanitized_boot_path}.;1"
             else:
-                boot_iso_path = f"/{boot_file_basename.upper()};1"
+                boot_iso_path = f"{sanitized_boot_path};1"
             add_file(
                 module,
                 iso_file=iso_file,
