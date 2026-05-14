@@ -1391,7 +1391,7 @@ files:
   $modules/twilio.py:
     maintainers: makaimc
   $modules/udm_:
-    maintainers: keachi
+    ignore: keachi
   $modules/ufw.py:
     labels: ufw
     maintainers: ahtik ovcharenko pyykkis
