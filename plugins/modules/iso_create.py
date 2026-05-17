@@ -225,6 +225,17 @@ import os
 import re
 import traceback
 
+PYCDLIB_IMP_ERR = None
+try:
+    import pycdlib
+
+    HAS_PYCDLIB = True
+except ImportError:
+    PYCDLIB_IMP_ERR = traceback.format_exc()
+    HAS_PYCDLIB = False
+
+from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+
 PLATFORM_ID_MAP = {
     "x86": b"\x00",
     "efi": b"\xef",
@@ -247,18 +258,6 @@ def _sanitize_iso_path(path, is_file=False):
         else:
             result.append(_ISO9660_INVALID.sub("_", part.upper()))
     return "/".join(result)
-
-
-PYCDLIB_IMP_ERR = None
-try:
-    import pycdlib
-
-    HAS_PYCDLIB = True
-except ImportError:
-    PYCDLIB_IMP_ERR = traceback.format_exc()
-    HAS_PYCDLIB = False
-
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 
 
 def add_file(module, iso_file=None, src_file=None, file_path=None, rock_ridge=None, use_joliet=None, use_udf=None):
