@@ -336,6 +336,11 @@ class LdapAttrs(LdapGeneric):
             is_present = len(dns) == 1
         except ldap.NO_SUCH_OBJECT:
             is_present = False
+        except ldap.INAPPROPRIATE_MATCHING:
+            # The attribute has no EQUALITY matching rule configured on the server
+            # (common for some cn=config olc* attributes), so it cannot be used in
+            # a search filter. Fall back to comparing the values in Python.
+            is_present = value in self._get_all_values_of(name)
 
         return is_present
 
